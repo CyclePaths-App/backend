@@ -1,0 +1,12 @@
+services:
+  cyclepaths-backend:
+    image: CyclePaths-backend
+    ports: ${BACKEND_PORT}:8000
+  cyclepaths-db:
+    image: postgres:17.2
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports: ${DATABASE_PORT}:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
