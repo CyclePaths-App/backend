@@ -1,5 +1,5 @@
 import { onDatabaseConnect } from './config/knex';
 
-console.log('Hello, world!');
-
 onDatabaseConnect();
+
+console.log('Hello, world!');

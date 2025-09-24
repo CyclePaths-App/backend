@@ -12,13 +12,14 @@ const DB: any = knex({
     port: Number(DB_PORT),
     user: DB_USER,
     password: DB_PASSWORD,
-    database: DB_DATABASE,
+    database: DB_DATABASE, // It's complaining, but you can't remove it.
   },
+  debug: true,
   pool: { min: 0, max: 10 },
 });
-
-export default DB;
 
 export const onDatabaseConnect = async () => {
   await DB.raw('SELECT 1');
 };
+
+export default DB;
