@@ -1,2 +1,5 @@
-podman run -d --name CyclePaths_db --replace -e POSTGRES_PASSWORD=123abc456efg -p 5432:5432 postgres:17.2;
+# start up an already working container.
+podman start CyclePaths_DB
 # run migrations
+sleep 2 # give the container a bit to set up.
+knex migrate:latest
