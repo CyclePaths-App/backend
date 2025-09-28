@@ -9,6 +9,27 @@
     "test": "jest",
     "clean": "rm -r ./dist"
   },
+  "jest": {
+    "clearMocks": true,
+    "collectCoverage": true,
+    "coverageThreshold": {
+      "branches": 70,
+      "functions": 100,
+      "lines": 70
+    },
+    "transform": {
+      "^.+\\.[t|j]sx?$": "babel-jest"
+    }
+  },
+  "babel": {
+    "env": {
+      "test": {
+        "plugins": [
+          "@babel/plugin-transform-modules-commonjs"
+        ]
+      }
+    }
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/CyclePaths-App/backend.git"
@@ -20,9 +41,12 @@
   },
   "homepage": "https://github.com/CyclePaths-App/backend#readme",
   "dependencies": {
+    "@babel/core": "^7.28.4",
+    "@babel/plugin-transform-modules-commonjs": "^7.27.1",
+    "babel-jest": "^30.2.0",
     "cors": "^2.8.5",
-    "express": "^5.1.0",
     "dotenv": "^17.2.2",
+    "express": "^5.1.0",
     "knex": "^3.1.0",
     "pg": "^8.16.3",
     "tsx": "^4.20.5",
