@@ -5,7 +5,7 @@ dotenv.config();
 
 const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE } = process.env;
 
-const DB: any = knex({
+const DB = knex({
   client: 'postgresql',
   connection: {
     host: DB_HOST,
