@@ -7,6 +7,12 @@ export async function up(knex: Knex): Promise<void> {
     table.string('email').notNullable();
     table.string('password').notNullable();
   });
+
+  knex.schema.raw(`
+CREATE TABLE records (
+    id SERIAL PRIMARY KEY,
+    
+)`);
 }
 
 export async function down(knex: Knex): Promise<void> {

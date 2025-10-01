@@ -6,12 +6,17 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "test": "jest",
+    "test": "jest --detectOpenHandles",
     "clean": "rm -r ./dist"
   },
   "jest": {
     "clearMocks": true,
     "collectCoverage": true,
+    "collectCoverageFrom": [
+      "/src/controllers/*.{ts,tsx}",
+      "/src/lib/*.{ts,tsx}",
+      "/src/logic/*.{ts,tsx}"
+    ],
     "coverageThreshold": {
       "branches": 70,
       "functions": 100,
