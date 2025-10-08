@@ -1,19 +1,9 @@
-import dotenv from 'dotenv';
 import knex from 'knex';
-
-dotenv.config();
-
-const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE } = process.env;
+import { CONNECTION_STRING } from '../constants';
 
 const DB = knex({
   client: 'postgresql',
-  connection: {
-    host: DB_HOST,
-    port: Number(DB_PORT),
-    user: DB_USER,
-    password: DB_PASSWORD,
-    database: DB_DATABASE, // It's complaining, but you can't remove it.
-  },
+  connection: CONNECTION_STRING,
   debug: true,
   pool: { min: 0, max: 10 },
 });

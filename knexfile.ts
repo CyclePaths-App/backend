@@ -1,10 +1,5 @@
 import type { Knex } from 'knex';
-import dotenv from 'dotenv';
-dotenv.config();
-
-const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE } = process.env;
-
-const CONNECTION_STRING = `postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}`;
+import { CONNECTION_STRING } from './src/constants';
 
 const config: { [key: string]: Knex.Config } = {
   development: {
