@@ -1,5 +1,12 @@
 import type { Knex } from 'knex';
-import { CONNECTION_STRING } from './src/constants';
+import dotenv from 'dotenv';
+
+// Get env variables
+dotenv.config();
+const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE } = process.env;
+export const CONNECTION_STRING = `postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}`;
+
+const MIGRATION_TABLE_NAME = 'knex_migrations'; // Be lazy
 
 const config: { [key: string]: Knex.Config } = {
   development: {
@@ -11,10 +18,9 @@ const config: { [key: string]: Knex.Config } = {
       max: 10,
     },
     migrations: {
-      tableName: 'knex_migrations',
+      tableName: MIGRATION_TABLE_NAME,
     },
   },
-
   staging: {
     client: 'postgresql',
     connection: CONNECTION_STRING,
@@ -24,10 +30,9 @@ const config: { [key: string]: Knex.Config } = {
       max: 10,
     },
     migrations: {
-      tableName: 'knex_migrations',
+      tableName: MIGRATION_TABLE_NAME,
     },
   },
-
   production: {
     client: 'postgresql',
     connection: CONNECTION_STRING,
@@ -36,7 +41,7 @@ const config: { [key: string]: Knex.Config } = {
       max: 10,
     },
     migrations: {
-      tableName: 'knex_migrations',
+      tableName: MIGRATION_TABLE_NAME,
     },
   },
 };
