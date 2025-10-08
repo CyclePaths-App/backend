@@ -4,16 +4,12 @@ dotenv.config();
 
 const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE } = process.env;
 
+const CONNECTION_STRING = `postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}`;
+
 const config: { [key: string]: Knex.Config } = {
   development: {
     client: 'postgresql',
-    connection: {
-      host: DB_HOST,
-      port: Number(DB_PORT),
-      user: DB_USER,
-      password: DB_PASSWORD,
-      database: DB_DATABASE,
-    },
+    connection: CONNECTION_STRING,
     debug: true,
     pool: {
       min: 2,
@@ -26,13 +22,7 @@ const config: { [key: string]: Knex.Config } = {
 
   staging: {
     client: 'postgresql',
-    connection: {
-      host: DB_HOST,
-      port: Number(DB_PORT),
-      user: DB_USER,
-      password: DB_PASSWORD,
-      database: DB_DATABASE,
-    },
+    connection: CONNECTION_STRING,
     debug: true,
     pool: {
       min: 2,
@@ -45,11 +35,7 @@ const config: { [key: string]: Knex.Config } = {
 
   production: {
     client: 'postgresql',
-    connection: {
-      database: 'my_db',
-      user: 'username',
-      password: 'password',
-    },
+    connection: CONNECTION_STRING,
     pool: {
       min: 2,
       max: 10,
