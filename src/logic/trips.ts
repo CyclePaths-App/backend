@@ -19,6 +19,7 @@ export async function createTrip(
     throw Error('createTrip(): Trip must have points');
   }
 
+  // Setup trip preprocessing.
   let distance = 0;
   trip.sort((a, b) => a.time.getTime() - b.time.getTime());
   const points: {
@@ -37,6 +38,7 @@ export async function createTrip(
       speed_mps: 0,
     });
 
+  // Get each location's speed and wrap into a nice array.
   for (let i = 1; i < trip.length; i++) {
     // Unwrap points because TS gets upset when you access an object array.
     const previous_point: Location = {
@@ -58,10 +60,10 @@ export async function createTrip(
 
     // Calculate distance and speed
     const point_distance = turf.length(line, { units: 'meters' });
-    const time_difference = // Need time in seconds
-      (previous_point.time.getTime() - current_point.time.getTime()) * 1000;
+    const time_difference =
+      (previous_point.time.getTime() - current_point.time.getTime()) * 1000; // Time in seconds.
     distance += point_distance;
-    const speed = time_difference == 0 ? 0 : point_distance / time_difference;
+    const speed = time_difference == 0 ? 0 : point_distance / time_difference; // If the time difference is 0, set speed to 0 instead of infinity.
 
     points.push({
       longitude: current_point.longitude,
@@ -71,6 +73,7 @@ export async function createTrip(
     });
   }
 
+  // Transaction, because if one point fails, we need to undo everything.
   return await DB.transaction(async (trx) => {
     const db_trip = {
       user_id: user_id,
@@ -88,10 +91,12 @@ export async function createTrip(
         else throw Error(`createTrip(): Uncaught error: ${err_mes}`);
       });
     if (!res[0]) {
+      // Really shouldn't happen, but checking to appease TS.
       throw Error(`createTrip(): Error creating trip, got ${res.length} IDs.`);
     }
     const id = res[0].id;
 
+    // Add each point.
     points.forEach((point) => {
       createPoint(
         id,
@@ -103,12 +108,66 @@ export async function createTrip(
       );
     });
 
-    return id ?? -1;
+    return id;
   }).catch((err) => {
     console.error(`createTrip(): ${err}`);
     throw err;
   });
 }
+
+export async function getTrip(trip_id: number): Promise<Trip> {
+  try {
+    const row = await DB.select('*')
+      .from('trips')
+      .where({ id: trip_id })
+      .first();
+
+    if (!row) {
+      throw Error(`getTrip(): No such trip.`);
+    }
+
+    const trip: Trip = {
+      id: row.id,
+      user_id: row.user_id,
+      distance: row.distance,
+      trip_type: row.trip_type,
+    };
+
+    return trip;
+  } catch (err) {
+    console.error(err);
+    throw Error(`getTrip(): Unknown Error: ${err}`);
+  }
+}
+
+export async function getTripByUserId(user_id: number): Promise<Trip[]> {
+  try {
+    const rows = await DB.select('*').from('trips').where({ user_id: user_id });
+
+    const trips: Trip[] = rows.map((row) => {
+      return {
+        id: row.id,
+        user_id: row.user_id,
+        distance: row.distance,
+        trip_type: row.trip_type,
+      };
+    });
+
+    return trips;
+  } catch (err) {
+    console.error(err);
+    throw Error(`getTrip(): Unknown Error: ${err}`);
+  }
+}
+
+// export async function updateTrip(
+//   id: number,
+//   user_id: number,
+//   distance: number,
+//   trip_type: TripType
+// ): Promise<boolean> {
+
+// }
 
 /*
 | Column   | Type     | Comments                                      |
@@ -116,8 +175,6 @@ export async function createTrip(
 | id       | serial   | Primary key                                   |
 | user_id  | int      | Foreign key from users                        |
 | distance | float    | needs to handle decimals, measured in meters? |
-| start    | lat/long | needs to handle decimals to 5 decimal points  |
-| end      | lat/long | needs to handle decimals to 5 decimal points  |
 | type     | enum     | walking or cycling?                           |
 */
 

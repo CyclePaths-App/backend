@@ -1,6 +1,6 @@
 import { seed } from '../../../seeds/seed_name';
 import DB from '../../config/knex';
-import { createTrip, Trip } from '../../logic/trips';
+import { createTrip, getTrip, getTripByUserId, Trip } from '../../logic/trips';
 
 describe('Trips logic tests', () => {
   const STANDARD_TRIP = [
@@ -61,6 +61,37 @@ describe('Trips logic tests', () => {
       expect(async () => {
         await createTrip(1, [], 'bike');
       }).rejects.toThrow();
+    });
+  });
+
+  describe('getTrip()', () => {
+    test('should get trip', async () => {
+      const trip = await getTrip(1);
+
+      expect(trip.id).toBe(1);
+      expect(trip.user_id).toBe(1);
+      expect(trip.distance).toBe(69);
+      expect(trip.trip_type).toBe('walk');
+    });
+
+    test('should throw error on nonexistent id', async () => {
+      expect(async () => {
+        await getTrip(404);
+      }).rejects.toThrow();
+    });
+  });
+
+  describe('getTripsByUserId', () => {
+    test('should get trips', async () => {
+      const trips = await getTripByUserId(1);
+
+      expect(trips.length).toBe(1);
+    });
+
+    test('should return empty on nonexistent user_id', async () => {
+      const trips = await getTripByUserId(404);
+
+      expect(trips.length).toBe(0);
     });
   });
 });
