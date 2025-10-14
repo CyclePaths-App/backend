@@ -3,7 +3,11 @@ import type { Knex } from 'knex';
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTableIfNotExists('trips', (table) => {
     table.increments('id').primary();
-    table.integer('user_id').notNullable().references('users.id');
+    table
+      .integer('user_id')
+      .notNullable()
+      .references('users.id')
+      .onDelete('CASCADE');
 
     // Holds distance in meters. If someone is complaining about a few missed centimeters, that's a them issue.
     table.integer('distance').notNullable();
