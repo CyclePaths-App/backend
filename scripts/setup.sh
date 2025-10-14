@@ -1,5 +1,5 @@
 echo "Downloading container (if not downloaded already), and starting the container."
-podman run -d --name=CyclePaths_DB --replace -e POSTGRES_PASSWORD=123abc456efg -p 5432:5432 postgres:18-alpine3.22;
+podman run -d --name=CyclePaths_DB --replace -e POSTGRES_PASSWORD=123abc456efg -p 5432:5432 docker.io/postgres:18-alpine3.22;
 
 echo "Waiting for PostgreSQL to be ready..."
 until podman exec CyclePaths_DB pg_isready -U postgres > /dev/null 2>&1; do
