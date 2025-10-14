@@ -27,3 +27,96 @@ export type Point = {
   time: Date;
   speed: number;
 };
+
+export async function getPointsByTrip(trip_id: number): Promise<Point[]> {
+  try {
+    const rows = await DB.select('*')
+      .from('points')
+      .where({ trip_id })
+      .orderBy('time', 'asc');
+
+    const points: Point[] = rows.map((row) => ({
+      trip_id: row.trip_id,
+      longitude: row.longitude,
+      latitude: row.latitude,
+      time: row.time,
+      speed: row.speed_mps,
+    }));
+
+    return points;
+  } catch (err: any) {
+    console.error(err);
+    throw Error(`getPointsByTrip(): ${err.message}`);
+  }
+}
+
+export async function getPoint(
+  trip_id: number,
+  time: Date
+): Promise<Point> {
+  try {
+    const row = await DB.select('*')
+      .from('points')
+      .where({ trip_id, time })
+      .first();
+
+    if (!row) {
+      throw Error(`getPoint(): No point found for trip_id ${trip_id} at ${time.toISOString()}`);
+    }
+    const point: Point = {
+      trip_id: row.trip_id,
+      longitude: row.longitude,
+      latitude: row.latitude,
+      time: row.time,
+      speed: row.speed_mps,
+    };
+
+    return point;
+    } catch (err: any) {
+    console.error(err);
+    throw Error(`getPoint(): ${err.message}`);
+  }
+}
+export async function updatePoint(
+  trip_id: number,
+  time: Date,
+  data: Partial<Point>
+): Promise<boolean> {
+  try {
+    const res = await DB('points')
+      .where({ trip_id, time })
+      .update({
+        ...data,
+        speed_mps: data.speed, // Map to DB column
+      });
+
+    if (res === 0) {
+      throw Error(`updatePoint(): No point found to update for trip_id ${trip_id} at ${time.toISOString()}`);
+    }
+
+    return true;
+  } catch (err: any) {
+    console.error(err);
+    throw Error(`updatePoint(): ${err.message}`);
+  }
+}
+
+export async function deletePoint(
+  trip_id: number,
+  time: Date
+): Promise<boolean> {
+  try {
+    const res = await DB('points')
+      .where({ trip_id, time })
+      .delete();
+
+    if (res === 0) {
+      throw Error(`deletePoint(): No point found to delete for trip_id ${trip_id} at ${time.toISOString()}`);
+    }
+
+    return true;
+  } catch (err: any) {
+    console.error(err);
+    throw Error(`deletePoint(): ${err.message}`);
+  }
+}
