@@ -1,8 +1,11 @@
 import DB from '../config/knex';
-import { createPoint } from './points';
+import { createPoint, Point } from './points';
 import * as turf from '@turf/turf';
 
+//#region Create
+
 /**
+ * Creates a trip, and populates the points that make up said trip.
  *
  * @param user_id
  * @param trip
@@ -19,59 +22,7 @@ export async function createTrip(
     throw Error('createTrip(): Trip must have points');
   }
 
-  // Setup trip preprocessing.
-  let distance = 0;
-  trip.sort((a, b) => a.time.getTime() - b.time.getTime());
-  const points: {
-    longitude: number;
-    latitude: number;
-    time: Date;
-    speed_mps: number;
-  }[] = [];
-
-  if (trip[0])
-    // Only checking to make TS happy. Should be defined.
-    points.push({
-      longitude: trip[0].longitude,
-      latitude: trip[0].latitude,
-      time: trip[0].time,
-      speed_mps: 0,
-    });
-
-  // Get each location's speed and wrap into a nice array.
-  for (let i = 1; i < trip.length; i++) {
-    // Unwrap points because TS gets upset when you access an object array.
-    const previous_point: Location = {
-      latitude: trip[i - 1]?.latitude ?? -1,
-      longitude: trip[i - 1]?.longitude ?? -1,
-      time: trip[i - 1]?.time ?? new Date(1969, 12, 31, 23, 59, 60, 9999),
-    };
-    const current_point: Location = {
-      latitude: trip[i]?.latitude ?? -1,
-      longitude: trip[i]?.longitude ?? -1,
-      time: trip[i]?.time ?? new Date(1969, 12, 31, 23, 59, 60, 9999),
-    };
-
-    // Create Turf Line
-    let line = turf.lineString([
-      [previous_point.longitude, previous_point.latitude],
-      [current_point.longitude, current_point.latitude],
-    ]);
-
-    // Calculate distance and speed
-    const point_distance = turf.length(line, { units: 'meters' });
-    const time_difference =
-      (previous_point.time.getTime() - current_point.time.getTime()) * 1000; // Time in seconds.
-    distance += point_distance;
-    const speed = time_difference == 0 ? 0 : point_distance / time_difference; // If the time difference is 0, set speed to 0 instead of infinity.
-
-    points.push({
-      longitude: current_point.longitude,
-      latitude: current_point.latitude,
-      time: current_point.time,
-      speed_mps: speed,
-    });
-  }
+  const { points, distance } = preprocessTrip(trip);
 
   // Transaction, because if one point fails, we need to undo everything.
   return await DB.transaction(async (trx) => {
@@ -103,7 +54,7 @@ export async function createTrip(
         point.longitude,
         point.latitude,
         point.time,
-        point.speed_mps,
+        point.speed,
         trx
       );
     });
@@ -115,6 +66,16 @@ export async function createTrip(
   });
 }
 
+//#endregion
+
+//#region Read
+
+/**
+ * Gets the requested trip. Throws error if the trip doesn't exist.
+ *
+ * @param trip_id The ID of the desired trip.
+ * @returns The requested trip.
+ */
 export async function getTrip(trip_id: number): Promise<Trip> {
   try {
     const row = await DB.select('*')
@@ -140,6 +101,13 @@ export async function getTrip(trip_id: number): Promise<Trip> {
   }
 }
 
+/**
+ * Gets all trips associated with a user. Returns an empty array if the user doesn't
+ * exist, or if there are no trips associated with the user.
+ *
+ * @param user_id The user_id associated with the desired trips.
+ * @returns An Array of Trips associated with the passed user_id.
+ */
 export async function getTripByUserId(user_id: number): Promise<Trip[]> {
   try {
     const rows = await DB.select('*').from('trips').where({ user_id: user_id });
@@ -160,23 +128,157 @@ export async function getTripByUserId(user_id: number): Promise<Trip[]> {
   }
 }
 
-// export async function updateTrip(
-//   id: number,
-//   user_id: number,
-//   distance: number,
-//   trip_type: TripType
-// ): Promise<boolean> {
+//#endregion
 
-// }
+//#region Update
 
-/*
-| Column   | Type     | Comments                                      |
-| -------- | -------- | --------------------------------------------- |
-| id       | serial   | Primary key                                   |
-| user_id  | int      | Foreign key from users                        |
-| distance | float    | needs to handle decimals, measured in meters? |
-| type     | enum     | walking or cycling?                           |
-*/
+/**
+ * Updates the distance and type of the specified trip.
+ *
+ * @param id The TripID of the trip to be updated.
+ * @param _user_id The user_id of the trip to be updated. Not currently in use, but it
+ * could be useful for authorization.
+ * @param distance The new distance of the trip.
+ * @param trip_type The new type of the trip.
+ * @returns True if the trip is updated successfully, false otherwise.
+ */
+export async function updateTrip(
+  id: number,
+  _user_id: number,
+  distance: number,
+  trip_type: TripType
+): Promise<boolean> {
+  try {
+    const amount_updated = await DB('trips')
+      .update({ distance: distance, trip_type: trip_type })
+      .where({ id: id });
+
+    if (amount_updated > 1) {
+      throw Error(
+        `updateTrip(): Multiple entries were updated after changing one trip ID. Gods help us if this ever happens.`
+      );
+    }
+
+    return amount_updated == 1;
+  } catch (err) {
+    throw Error(`updateTrip(): Unexpected error: ${err}`);
+  }
+}
+
+//#endregion
+
+//#region Delete.
+
+/**
+ * Deletes the trip with the passed trip_id.
+ *
+ * @param id The trip_id of the trip to be deleted.
+ * @returns True if the trip is deleted successfully. False othewise.
+ */
+export async function deleteTrip(id: number): Promise<boolean> {
+  try {
+    const amount_deleted = await DB('trips').delete().where({ id: id });
+
+    if (amount_deleted > 1) {
+      throw Error('deleteTrip(): Something really wrong has happened.');
+    }
+
+    return amount_deleted == 1;
+  } catch (err) {
+    throw Error(`deleteTrip(): Unexpected error: ${err}`);
+  }
+}
+
+/**
+ * Deletes all trips associated with a user_id.
+ *
+ * @param user_id The user_id associated with the trips to be deleted.
+ * @returns The amount of trips deleted.
+ */
+export async function deleteTripsByUserId(user_id: number): Promise<number> {
+  try {
+    const amount_deleted = await DB('trips')
+      .delete()
+      .where({ user_id: user_id });
+
+    return amount_deleted;
+  } catch (err) {
+    throw Error(`deleteTrip(): Unexpected error: ${err}`);
+  }
+}
+
+//#endregion
+
+//#region Utility Functions
+
+/**
+ * Process the trip by calculating the total distance and the speed at each point in the trip.
+ *
+ * @param trip The sequence of Locations from the tracked trip.
+ * @returns Points with the estimated speed, and the overall distance of the trip.
+ */
+function preprocessTrip(trip: Location[]): {
+  points: Point[];
+  distance: number;
+} {
+  let distance = 0;
+  const points: Point[] = [];
+
+  // Sort by time, so we can easily compare each point to it's neighbor.
+  trip.sort((a, b) => a.time.getTime() - b.time.getTime());
+
+  if (trip[0])
+    // Only checking to make TS happy. Should be defined.
+    points.push({
+      trip_id: -1, // Scrub out until we get the trip_id
+      longitude: trip[0].longitude,
+      latitude: trip[0].latitude,
+      time: trip[0].time,
+      speed: 0,
+    });
+
+  // Get each location's speed and wrap into a nice array.
+  for (let i = 1; i < trip.length; i++) {
+    // Unwrap points because TS gets upset when you access an object array.
+    const previous_point: Location = {
+      latitude: trip[i - 1]?.latitude ?? -1,
+      longitude: trip[i - 1]?.longitude ?? -1,
+      time: trip[i - 1]?.time ?? new Date(1969, 12, 31, 23, 59, 60, 9999),
+    };
+    const current_point: Location = {
+      latitude: trip[i]?.latitude ?? -1,
+      longitude: trip[i]?.longitude ?? -1,
+      time: trip[i]?.time ?? new Date(1969, 12, 31, 23, 59, 60, 9999),
+    };
+
+    // Create Line with Turf
+    let line = turf.lineString([
+      [previous_point.longitude, previous_point.latitude],
+      [current_point.longitude, current_point.latitude],
+    ]);
+
+    // Calculate distance and speed
+    const point_distance = turf.length(line, { units: 'meters' });
+    const time_difference =
+      (previous_point.time.getTime() - current_point.time.getTime()) * 1000; // Time in seconds.
+    distance += point_distance;
+    const speed = time_difference == 0 ? 0 : point_distance / time_difference; // If the time difference is 0, set speed to 0 instead of infinity.
+
+    points.push({
+      trip_id: -1, // Scrub out until we get the trip_id.
+      longitude: current_point.longitude,
+      latitude: current_point.latitude,
+      time: current_point.time,
+      speed: speed,
+    });
+  }
+
+  return { points, distance };
+}
+
+//#endregion
+
+//#region Types
 
 export type Trip = {
   id: number;
@@ -192,3 +294,5 @@ export type Location = {
   longitude: number;
   time: Date;
 };
+
+//#endregion

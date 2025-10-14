@@ -1,6 +1,14 @@
 import { seed } from '../../../seeds/seed_name';
 import DB from '../../config/knex';
-import { createTrip, getTrip, getTripByUserId, Trip } from '../../logic/trips';
+import {
+  createTrip,
+  deleteTrip,
+  deleteTripsByUserId,
+  getTrip,
+  getTripByUserId,
+  Trip,
+  updateTrip,
+} from '../../logic/trips';
 
 describe('Trips logic tests', () => {
   const STANDARD_TRIP = [
@@ -92,6 +100,68 @@ describe('Trips logic tests', () => {
       const trips = await getTripByUserId(404);
 
       expect(trips.length).toBe(0);
+    });
+  });
+
+  describe('updateTrip()', () => {
+    test('should update trip', async () => {
+      const is_updated = await updateTrip(1, 1, 67, 'bike');
+
+      expect(is_updated).toBe(true);
+
+      const db_entry: Trip = (
+        await DB.select('*').from('trips').where({ id: 1 })
+      )[0];
+
+      expect(db_entry.user_id).toBe(1);
+      expect(db_entry.distance).toBe(67);
+      expect(db_entry.trip_type).toBe('bike');
+    });
+
+    test('should return false on nonexistent id', async () => {
+      const is_updated = await updateTrip(404, 1, 67, 'bike');
+
+      expect(is_updated).toBe(false);
+    });
+  });
+
+  describe('deleteTrip()', () => {
+    test('should delete trip', async () => {
+      const is_deleted = await deleteTrip(1);
+
+      expect(is_deleted).toBe(true);
+
+      const entries: Trip[] = await DB.select('*')
+        .from('trips')
+        .where({ id: 1 });
+
+      expect(entries.length).toBe(0);
+    });
+
+    test('should return false on nonexistent id', async () => {
+      const is_deleted = await deleteTrip(404);
+
+      expect(is_deleted).toBe(false);
+    });
+  });
+
+  describe('deleteTripsByUserId()', () => {
+    test('should delete trips', async () => {
+      const is_deleted = await deleteTripsByUserId(1);
+
+      expect(is_deleted).toBe(1);
+
+      const entries: Trip[] = await DB.select('*')
+        .from('trips')
+        .where({ id: 1 });
+
+      expect(entries.length).toBe(0);
+    });
+
+    test('should return false on nonexistent user_id', async () => {
+      const is_deleted = await deleteTripsByUserId(404);
+
+      expect(is_deleted).toBe(0);
     });
   });
 });

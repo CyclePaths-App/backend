@@ -2,7 +2,7 @@ import type { Knex } from 'knex';
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTableIfNotExists('points', (table) => {
-    table.integer('trip_id').references('trips.id');
+    table.integer('trip_id').references('trips.id').onDelete('CASCADE');
     /**
      * Latitude and longitude need 5 digits behind the  decimal to have a maximum error of <1 m.
      */
