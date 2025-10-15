@@ -50,10 +50,7 @@ export async function getPointsByTrip(trip_id: number): Promise<Point[]> {
   }
 }
 
-export async function getPoint(
-  trip_id: number,
-  time: Date
-): Promise<Point> {
+export async function getPoint(trip_id: number, time: Date): Promise<Point> {
   try {
     const row = await DB.select('*')
       .from('points')
@@ -61,18 +58,20 @@ export async function getPoint(
       .first();
 
     if (!row) {
-      throw Error(`getPoint(): No point found for trip_id ${trip_id} at ${time.toISOString()}`);
+      throw Error(
+        `getPoint(): No point found for trip_id ${trip_id} at ${time.toISOString()}`
+      );
     }
     const point: Point = {
       trip_id: row.trip_id,
-      longitude: row.longitude,
-      latitude: row.latitude,
+      longitude: Number.parseFloat(row.longitude),
+      latitude: Number.parseFloat(row.latitude),
       time: row.time,
-      speed: row.speed_mps,
+      speed: Number.parseFloat(row.speed_mps),
     };
 
     return point;
-    } catch (err: any) {
+  } catch (err: any) {
     console.error(err);
     throw Error(`getPoint(): ${err.message}`);
   }
@@ -83,15 +82,16 @@ export async function updatePoint(
   data: Partial<Point>
 ): Promise<boolean> {
   try {
-    const res = await DB('points')
-      .where({ trip_id, time })
-      .update({
-        ...data,
-        speed_mps: data.speed, // Map to DB column
-      });
+    const res = await DB('points').where({ trip_id, time }).update({
+      longitude: data.longitude,
+      latitude: data.latitude,
+      speed_mps: data.speed,
+    });
 
     if (res === 0) {
-      throw Error(`updatePoint(): No point found to update for trip_id ${trip_id} at ${time.toISOString()}`);
+      throw Error(
+        `updatePoint(): No point found to update for trip_id ${trip_id} at ${time.toISOString()}`
+      );
     }
 
     return true;
@@ -106,12 +106,12 @@ export async function deletePoint(
   time: Date
 ): Promise<boolean> {
   try {
-    const res = await DB('points')
-      .where({ trip_id, time })
-      .delete();
+    const res = await DB('points').where({ trip_id, time }).delete();
 
     if (res === 0) {
-      throw Error(`deletePoint(): No point found to delete for trip_id ${trip_id} at ${time.toISOString()}`);
+      throw Error(
+        `deletePoint(): No point found to delete for trip_id ${trip_id} at ${time.toISOString()}`
+      );
     }
 
     return true;

@@ -5,14 +5,14 @@ import {
   getPoint,
   updatePoint,
   deletePoint,
-  Point
+  Point,
 } from '../../logic/points';
 
 describe('Points logic tests', () => {
   const TEST_POINT = {
     trip_id: 1,
-    longitude: -73.828025,
-    latitude: 42.686261,
+    longitude: -73.82802,
+    latitude: 42.68626,
     time: new Date(2025, 9, 20, 18, 5, 0),
     speed: 4.5,
   };
@@ -52,7 +52,7 @@ describe('Points logic tests', () => {
       )[0];
 
       expect(db_entry.trip_id).toBe(TEST_POINT.trip_id);
-      expect(db_entry.longitude).toBeCloseTo(TEST_POINT.longitude);
+      expect(db_entry.longitude).toBe(TEST_POINT.longitude.toString()); // TS is dumb and for some reason is treating the result as a string.
     });
   });
 
@@ -67,9 +67,9 @@ describe('Points logic tests', () => {
         undefined
       );
 
-      const point = await getPoint(TEST_POINT.trip_id, TEST_POINT.time);
+      const point: Point = await getPoint(TEST_POINT.trip_id, TEST_POINT.time);
       expect(point.trip_id).toBe(TEST_POINT.trip_id);
-      expect(point.speed).toBeCloseTo(TEST_POINT.speed);
+      expect(point.speed).toBe(TEST_POINT.speed);
     });
   });
 
