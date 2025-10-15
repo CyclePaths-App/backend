@@ -43,7 +43,7 @@ export async function getPointsByTrip(trip_id: number): Promise<Point[]> {
       speed: row.speed_mps,
     }));
 
-    return points;
+    return points ?? [];
   } catch (err: any) {
     console.error(err);
     throw Error(`getPointsByTrip(): ${err.message}`);
