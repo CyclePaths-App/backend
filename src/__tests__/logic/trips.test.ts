@@ -76,16 +76,17 @@ describe('Trips logic tests', () => {
     test('should get trip', async () => {
       const trip = await getTrip(1);
 
-      expect(trip.id).toBe(1);
-      expect(trip.user_id).toBe(1);
-      expect(trip.distance).toBe(69);
-      expect(trip.trip_type).toBe('walk');
+      expect(trip).toBeDefined();
+      expect(trip?.id).toBe(1);
+      expect(trip?.user_id).toBe(1);
+      expect(trip?.distance).toBe(69);
+      expect(trip?.trip_type).toBe('walk');
     });
 
     test('should throw error on nonexistent id', async () => {
-      expect(async () => {
-        await getTrip(404);
-      }).rejects.toThrow();
+      const trip = await getTrip(404);
+
+      expect(trip).toBeUndefined();
     });
   });
 

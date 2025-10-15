@@ -1,7 +1,9 @@
 import express from 'express';
 import cors from 'cors';
+import { BACKEND_PORT } from './constants';
+import tripsRouter from './routers/trips';
 
-const app = express();
+export const app = express();
 
 app.use(cors());
 
@@ -9,7 +11,8 @@ app.get('/', (_req, res) => {
   res.send('Hello World!');
 });
 
-const PORT = 4000;
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+app.use('/trips', tripsRouter);
+
+app.listen(BACKEND_PORT, () => {
+  console.log(`Server running at http://localhost:${BACKEND_PORT}`);
 });
