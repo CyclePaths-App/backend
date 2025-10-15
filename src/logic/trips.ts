@@ -76,7 +76,7 @@ export async function createTrip(
  * @param trip_id The ID of the desired trip.
  * @returns The requested trip.
  */
-export async function getTrip(trip_id: number): Promise<Trip> {
+export async function getTrip(trip_id: number): Promise<Trip | undefined> {
   try {
     const row = await DB.select('*')
       .from('trips')
@@ -84,7 +84,7 @@ export async function getTrip(trip_id: number): Promise<Trip> {
       .first();
 
     if (!row) {
-      throw Error(`getTrip(): No such trip.`);
+      return undefined;
     }
 
     const trip: Trip = {
@@ -289,10 +289,18 @@ export type Trip = {
 
 export type TripType = 'bike' | 'walk';
 
+export function isTripType(obj: any): obj is TripType {
+  return obj === 'bike' || obj === 'walk';
+}
+
 export type Location = {
   latitude: number;
   longitude: number;
   time: Date;
 };
+
+export function isLocation(obj: any): obj is Location {
+  return 'latitude' in obj && 'longitude' in obj && 'time' in obj;
+}
 
 //#endregion
