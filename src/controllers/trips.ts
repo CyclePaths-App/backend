@@ -1,10 +1,12 @@
 import { Request, Response } from 'express';
 import {
   createTrip,
+  deleteTrip,
   getTrip,
   getTripsByUserId,
   isTripType,
   Location,
+  updateTrip,
 } from '../logic/trips';
 import {
   BAD_REQUEST,
@@ -18,7 +20,7 @@ export async function postTrip(req: Request, res: Response): Promise<void> {
   const { user_id, trip, trip_type } = req.body;
 
   // Check user_id
-  if (!user_id || Number.isNaN(user_id)) {
+  if (!user_id || isNaN(user_id)) {
     res.status(BAD_REQUEST).send({
       message: `createTrip(): user_id must be a number. Received: ${user_id}`,
     });
@@ -67,7 +69,7 @@ export async function postTrip(req: Request, res: Response): Promise<void> {
 export async function fetchTrip(req: Request, res: Response) {
   const { id: trip_id } = req.params; // Have to use params for get requests.
 
-  if (!trip_id || Number.isNaN(+trip_id)) {
+  if (!trip_id || isNaN(+trip_id)) {
     res
       .status(BAD_REQUEST)
       .send(`getTrip(): trip_id must be a number. Received: ${trip_id}`);
@@ -90,10 +92,10 @@ export async function fetchTrip(req: Request, res: Response) {
 export async function fetchTripsByUserId(req: Request, res: Response) {
   const { id: user_id } = req.params;
 
-  if (!user_id || Number.isNaN(+user_id)) {
+  if (!user_id || isNaN(+user_id)) {
     res
       .status(BAD_REQUEST)
-      .send(`getTrip(): user_id must be a number. Received: ${user_id}`);
+      .send(`Cannot get trips. user_id must be a number. Received: ${user_id}`);
   }
 
   try {
@@ -103,5 +105,68 @@ export async function fetchTripsByUserId(req: Request, res: Response) {
   } catch (error) {
     console.error(error);
     res.status(INTERNAL_ERROR).send('fetchTripsByUserId: Unable to get trips.');
+  }
+}
+
+export async function putTrip(req: Request, res: Response) {
+  const { id, user_id, distance, trip_type } = req.body;
+
+  // Check id
+  if (!id || Number.isNaN(id)) {
+    res.status(BAD_REQUEST).send({
+      message: `Cannot update trip. id must be a number. Received: ${id}`,
+    });
+  }
+  // Check user_id
+  if (!user_id || Number.isNaN(user_id)) {
+    res.status(BAD_REQUEST).send({
+      message: `Cannot update trip. user_id must be a number. Received: ${user_id}`,
+    });
+  }
+  // Check distance
+  if (distance && isNaN(distance)) {
+    res.status(BAD_REQUEST).send({
+      message: `Cannot update trip. distance must be a number. Received: ${distance}`,
+    });
+  }
+  // Check trip_type
+  if (trip_type && isTripType(trip_type) == false) {
+    res.status(BAD_REQUEST).send({
+      message: `Cannot update trip. trip_type must be either \`bike\` or \`walk\`. Received: ${trip_type}`,
+    });
+  }
+
+  try {
+    if (await updateTrip(id, user_id, distance, trip_type)) {
+      res.status(OK_STATUS).send();
+    } else {
+      res.status(NOT_FOUND).send('No such trip.');
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(INTERNAL_ERROR).send('Failed to update trip.');
+  }
+}
+
+export async function delTrip(req: Request, res: Response) {
+  const { id: trip_id } = req.body;
+
+  if (!trip_id || isNaN(+trip_id)) {
+    res
+      .status(BAD_REQUEST)
+      .send(
+        `Unable to delete trip. trip_id must be a number. Received: ${trip_id}`
+      );
+  }
+
+  try {
+    if (await deleteTrip(trip_id)) {
+      res.status(OK_STATUS).send();
+    } else {
+      res.status(NOT_FOUND).send('Failed to delete trip.');
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(INTERNAL_ERROR).send('Failed to delete trip.');
   }
 }

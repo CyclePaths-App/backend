@@ -145,8 +145,8 @@ export async function getTripsByUserId(user_id: number): Promise<Trip[]> {
 export async function updateTrip(
   id: number,
   _user_id: number,
-  distance: number,
-  trip_type: TripType
+  distance: number | undefined,
+  trip_type: TripType | undefined
 ): Promise<boolean> {
   try {
     const amount_updated = await DB('trips')

@@ -3,6 +3,7 @@ import { seed } from '../../../seeds/seed_name';
 import DB from '../../config/knex';
 import { BAD_REQUEST, NOT_FOUND, OK_STATUS } from '../../constants';
 import request from 'supertest';
+import { getTrip } from '../../logic/trips';
 
 describe('Trips controllers tests', () => {
   const STANDARD_TRIP = [
@@ -116,6 +117,93 @@ describe('Trips controllers tests', () => {
 
     test('should return 400 on invalid user id', async () => {
       const res = await request(app).get(BASE_URL + 'Hi');
+      expect(res.status).toBe(BAD_REQUEST);
+    });
+  });
+
+  describe('PUT /trips/', () => {
+    test('Should update trip.', async () => {
+      const res = await request(app).put(URL).send({
+        id: 1,
+        user_id: 1,
+        distance: 67,
+        trip_type: 'bike',
+      });
+
+      expect(res.status).toBe(OK_STATUS);
+
+      const check = await getTrip(1);
+
+      expect(check?.distance).toBe(67);
+      expect(check?.trip_type).toBe('bike');
+    });
+
+    test('Should update only distance when type is unspecified', async () => {
+      const res = await request(app).put(URL).send({
+        id: 1,
+        user_id: 1,
+        distance: 67,
+      });
+
+      expect(res.status).toBe(OK_STATUS);
+
+      const check = await getTrip(1);
+
+      expect(check?.distance).toBe(67);
+      expect(check?.trip_type).toBe('walk');
+    });
+
+    test('Should return 400 on invalid distance', async () => {
+      const res = await request(app).put(URL).send({
+        id: 1,
+        user_id: 1,
+        distance: 'Invalid input',
+        trip_type: 'bike',
+      });
+
+      expect(res.status).toBe(BAD_REQUEST);
+    });
+
+    test('Should only update type when distance is unspecified.', async () => {
+      const res = await request(app).put(URL).send({
+        id: 1,
+        user_id: 1,
+        trip_type: 'bike',
+      });
+
+      expect(res.status).toBe(OK_STATUS);
+
+      const check = await getTrip(1);
+
+      expect(check?.distance).toBe(69);
+      expect(check?.trip_type).toBe('bike');
+    });
+
+    test('Should return 400 on invalid distance', async () => {
+      const res = await request(app).put(URL).send({
+        id: 1,
+        user_id: 1,
+        distance: 67,
+        trip_type: 'Invalid Type',
+      });
+
+      expect(res.status).toBe(BAD_REQUEST);
+    });
+  });
+
+  describe('DELETE /trips/', () => {
+    test('Should delete trip', async () => {
+      const res = await request(app).delete(URL).send({ id: 1 });
+
+      expect(res.status).toBe(OK_STATUS);
+
+      const check = await getTrip(1);
+      expect(check).toBe(undefined);
+    });
+
+    test('Should return BAD_REQUEST on invalid id', async () => {
+      const res = await request(app).delete(URL).send({ id: 'Invalid' });
+
       expect(res.status).toBe(BAD_REQUEST);
     });
   });
