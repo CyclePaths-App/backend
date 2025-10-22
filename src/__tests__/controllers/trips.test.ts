@@ -1,16 +1,10 @@
-import axios from 'axios';
+import { app } from '../..';
 import { seed } from '../../../seeds/seed_name';
 import DB from '../../config/knex';
-import {
-  BACKEND_PORT,
-  BAD_REQUEST,
-  NOT_FOUND,
-  OK_STATUS,
-} from '../../constants';
+import { BAD_REQUEST, NOT_FOUND, OK_STATUS } from '../../constants';
+import request from 'supertest';
 
 describe('Trips controllers tests', () => {
-  const BASE_URL = `http://localhost:${BACKEND_PORT}/trips`;
-
   const STANDARD_TRIP = [
     {
       latitude: 42.686261,
@@ -28,6 +22,9 @@ describe('Trips controllers tests', () => {
       time: new Date(2025, 9, 20, 18, 5, 30),
     },
   ];
+  const URL = '/trips/';
+
+  // #region Setup
 
   beforeAll(async () => {
     // Initial setup once before any tests run
@@ -45,47 +42,81 @@ describe('Trips controllers tests', () => {
     // Final cleanup once after all tests run
   });
 
-  describe('POST /', () => {
-    const URL = BASE_URL;
+  // #endregion
 
+  describe('POST /trips/', () => {
     test('should create trip and return new trip id.', async () => {
-      const res = await axios.post(URL, {
-        user_id: 1,
-        trip: STANDARD_TRIP,
-        trip_type: 'walk',
-      });
+      const res = await request(app)
+        .post(URL)
+        .send({ user_id: 1, trip: STANDARD_TRIP, trip_type: 'walk' });
 
       expect(res.status).toBe(OK_STATUS);
-      expect(res.data).toBe({ id: 3 });
+      expect(res.body.id).toBe(3);
     });
 
-    test('should return 400 on invalid user_id', async () => {
-      const res = await axios.post(URL, {
-        user_id: 'this is not a number',
-        trip: STANDARD_TRIP,
-        trip_type: 'walk',
-      });
+    test('should return 400 on missing user_id', async () => {
+      const res = await request(app)
+        .post(URL)
+        .send({ trip: STANDARD_TRIP, trip_type: 'walk' });
+
+      expect(res.status).toBe(BAD_REQUEST);
+    });
+
+    test('should return 400 on empty trip', async () => {
+      const res = await request(app)
+        .post(URL)
+        .send({ user_id: 1, trip: [], trip_type: 'walk' });
+
+      expect(res.status).toBe(BAD_REQUEST);
+    });
+
+    test('should return 400 on invalid trip_type', async () => {
+      const res = await request(app)
+        .post(URL)
+        .send({ user_id: 1, trip: STANDARD_TRIP, trip_type: 'swim' });
 
       expect(res.status).toBe(BAD_REQUEST);
     });
   });
 
-  describe('GET /:id', () => {
-    const URL = BASE_URL;
-
+  describe('GET /trips/:id', () => {
     test('should get trip', async () => {
-      const res = await axios.get(URL + '/1');
+      const res = await request(app).get(URL + '1');
 
       expect(res.status).toBe(OK_STATUS);
-      expect(res.data.user_id).toBe(1);
-      expect(res.data.distance).toBe(69);
-      expect(res.data.trip_type).toBe('walk');
+      expect(res.body.user_id).toBe(1);
+      expect(res.body.distance).toBe(69);
+      expect(res.body.trip_type).toBe('walk');
     });
 
     test('should return 404 on nonexistent trip', async () => {
-      const res = await axios.get(URL + '/404');
-
+      const res = await request(app).get(URL + '404');
       expect(res.status).toBe(NOT_FOUND);
+    });
+
+    test('should return 400 on invalid trip id', async () => {
+      const res = await request(app).get(URL + 'Hi');
+      expect(res.status).toBe(BAD_REQUEST);
+    });
+  });
+
+  describe('GET /trips/userid/', () => {
+    const BASE_URL = URL + 'userid/';
+    test('should get trips', async () => {
+      const res = await request(app).get(BASE_URL + '1');
+
+      expect(res.status).toBe(OK_STATUS);
+      expect(res.body.length).toBe(1);
+    });
+
+    test('should return empty array on nonexistent user', async () => {
+      const res = await request(app).get(BASE_URL + '404');
+      expect(res.body.length).toBe(0);
+    });
+
+    test('should return 400 on invalid user id', async () => {
+      const res = await request(app).get(BASE_URL + 'Hi');
+      expect(res.status).toBe(BAD_REQUEST);
     });
   });
 });

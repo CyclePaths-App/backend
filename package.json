@@ -41,9 +41,9 @@
     "clearMocks": true,
     "collectCoverage": true,
     "collectCoverageFrom": [
-      "/src/controllers/*.{ts,tsx}",
-      "/src/lib/*.{ts,tsx}",
-      "/src/logic/*.{ts,tsx}"
+      "./src/controllers/*.{ts,tsx}",
+      "./src/lib/*.{ts,tsx}",
+      "./src/logic/*.{ts,tsx}"
     ],
     "coverageThreshold": {
       "branches": 70,
@@ -67,9 +67,11 @@
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^24.3.1",
+    "@types/supertest": "^6.0.3",
     "axios": "^1.12.2",
     "jest": "^30.1.3",
     "prettier": "3.6.2",
+    "supertest": "^7.1.4",
     "ts-jest": "^29.4.4"
   }
 }

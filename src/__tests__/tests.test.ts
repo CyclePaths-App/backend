@@ -22,7 +22,7 @@ describe('Example test suite', () => {
   });
 
   test('DB Should be up', async () => {
-    const res = await DB.select(1);
-    expect(res[0]).toBeDefined();
+    const res = await DB.select(1).first();
+    expect(res).toBeDefined();
   });
 });

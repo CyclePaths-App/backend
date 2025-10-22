@@ -1,5 +1,11 @@
 import { Request, Response } from 'express';
-import { createTrip, getTrip, isTripType } from '../logic/trips';
+import {
+  createTrip,
+  getTrip,
+  getTripsByUserId,
+  isTripType,
+  Location,
+} from '../logic/trips';
 import {
   BAD_REQUEST,
   INTERNAL_ERROR,
@@ -8,19 +14,32 @@ import {
 } from '../constants';
 
 export async function postTrip(req: Request, res: Response): Promise<void> {
-  console.log(req.body);
+  //console.log(req.body);
   const { user_id, trip, trip_type } = req.body;
 
+  // Check user_id
   if (!user_id || Number.isNaN(user_id)) {
     res.status(BAD_REQUEST).send({
       message: `createTrip(): user_id must be a number. Received: ${user_id}`,
     });
   }
-  if (!trip || Array.isArray(trip) == false) {
+  // Check trip array
+  if (!trip || Array.isArray(trip) == false || trip.length < 2) {
     res.status(BAD_REQUEST).send({
-      message: `createTrip(): trips must be an array of Trips. Received: ${trip_type}`,
+      message: `createTrip(): trips must be an array of Trips. Received: ${trip}`,
     });
   }
+  // Convert the dates in each location to a date.
+  const checked_trip: Location[] = trip.map(
+    (location: { latitude: number; longitude: number; time: string }) => {
+      return {
+        latitude: location.latitude,
+        longitude: location.longitude,
+        time: new Date(location.time),
+      };
+    }
+  );
+  // Check trip_type
   if (!trip_type || isTripType(trip_type) == false) {
     res.status(BAD_REQUEST).send({
       message: `createTrip(): trip_type must be either \`bike\` or \`walk\`. Received: ${trip_type}`,
@@ -28,12 +47,12 @@ export async function postTrip(req: Request, res: Response): Promise<void> {
   }
 
   try {
-    const id = await createTrip(user_id, trip, trip_type);
+    const id = await createTrip(user_id, checked_trip, trip_type);
 
     if (id === -1) {
       res
         .status(INTERNAL_ERROR)
-        .send({ message: 'createTrip(): An unknown error has occurred.' });
+        .send({ message: 'createTrip(): Could not create trip.' });
     } else {
       res.status(OK_STATUS).send({
         id: id,
@@ -48,7 +67,7 @@ export async function postTrip(req: Request, res: Response): Promise<void> {
 export async function fetchTrip(req: Request, res: Response) {
   const { id: trip_id } = req.params; // Have to use params for get requests.
 
-  if (!trip_id || Number.isNaN(trip_id)) {
+  if (!trip_id || Number.isNaN(+trip_id)) {
     res
       .status(BAD_REQUEST)
       .send(`getTrip(): trip_id must be a number. Received: ${trip_id}`);
@@ -65,5 +84,24 @@ export async function fetchTrip(req: Request, res: Response) {
   } catch (err) {
     console.error(err);
     res.status(INTERNAL_ERROR).send(`fetchTrip(): Unknown error: ${err}`);
+  }
+}
+
+export async function fetchTripsByUserId(req: Request, res: Response) {
+  const { id: user_id } = req.params;
+
+  if (!user_id || Number.isNaN(+user_id)) {
+    res
+      .status(BAD_REQUEST)
+      .send(`getTrip(): user_id must be a number. Received: ${user_id}`);
+  }
+
+  try {
+    const trips = await getTripsByUserId(+(user_id ?? -1)); // Nonsense casting it to a number, and using -1 if it is undefined. Should never be undefined because of the if statement.
+
+    res.status(OK_STATUS).send(trips);
+  } catch (error) {
+    console.error(error);
+    res.status(INTERNAL_ERROR).send('fetchTripsByUserId: Unable to get trips.');
   }
 }

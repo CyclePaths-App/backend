@@ -5,7 +5,7 @@ import {
   deleteTrip,
   deleteTripsByUserId,
   getTrip,
-  getTripByUserId,
+  getTripsByUserId,
   Trip,
   updateTrip,
 } from '../../logic/trips';
@@ -29,6 +29,8 @@ describe('Trips logic tests', () => {
     },
   ];
 
+  //#region Setup
+
   beforeAll(async () => {
     // Initial setup once before any tests run
   });
@@ -44,6 +46,8 @@ describe('Trips logic tests', () => {
   afterAll(() => {
     // Final cleanup once after all tests run
   });
+
+  //#endregion
 
   describe('createTrip()', () => {
     test('should create trip', async () => {
@@ -92,13 +96,13 @@ describe('Trips logic tests', () => {
 
   describe('getTripsByUserId', () => {
     test('should get trips', async () => {
-      const trips = await getTripByUserId(1);
+      const trips = await getTripsByUserId(1);
 
       expect(trips.length).toBe(1);
     });
 
     test('should return empty on nonexistent user_id', async () => {
-      const trips = await getTripByUserId(404);
+      const trips = await getTripsByUserId(404);
 
       expect(trips.length).toBe(0);
     });

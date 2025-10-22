@@ -108,7 +108,7 @@ export async function getTrip(trip_id: number): Promise<Trip | undefined> {
  * @param user_id The user_id associated with the desired trips.
  * @returns An Array of Trips associated with the passed user_id.
  */
-export async function getTripByUserId(user_id: number): Promise<Trip[]> {
+export async function getTripsByUserId(user_id: number): Promise<Trip[]> {
   try {
     const rows = await DB.select('*').from('trips').where({ user_id: user_id });
 
