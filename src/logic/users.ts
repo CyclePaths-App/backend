@@ -1,12 +1,6 @@
 import DB from '../config/knex';
 
 /**
- * TASK LIST:
- * Ye, make the DB table in the users migration file (in ./migration/). Make the DB calls in the ./src/logic/ folder, make the
- * controller (the thing that checks input and decides status codes) in ./src/controller/, then define the routes in ./src/routes/
- */
-
-/**
  * Create a user in the database.
  * @param userID 
  * @param username 
