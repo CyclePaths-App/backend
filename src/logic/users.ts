@@ -55,7 +55,7 @@ export async function GetUserByID(userID: number) {
     }
 
     const user: User = {
-      id: row.userID,
+      id: row.id,
       username: row.username,
       email: row.email,
       password: row.passwords,
