@@ -4,7 +4,7 @@ import { CONNECTION_STRING } from '../constants';
 const DB = knex({
   client: 'postgresql',
   connection: CONNECTION_STRING,
-  debug: true,
+  debug: false,
   pool: { min: 0, max: 10 },
 });
 
