@@ -113,9 +113,9 @@ export async function DeleteUserByID(userID: number) {
 
 /**
  * Delete user by username, the user should not be in the users database.
- * @param username
+ * @param username // QUESTION: Why was this a number?
  */
-export async function DeleteUserByName(username: number) {
+export async function DeleteUserByName(username: string) {
   try {
     const deleteResult = await DB('users')
       .delete()
