@@ -1,5 +1,6 @@
 import { seed } from '../../../seeds/seed_name';
 import DB from '../../config/knex';
+import { getPointsByTrip } from '../../logic/points';
 import {
   createTrip,
   deleteTrip,
@@ -58,9 +59,18 @@ describe('Trips logic tests', () => {
         await DB.select('*').from('trips').where({ id: 3 })
       )[0];
 
+      // Check trips:
       expect(db_entry.user_id).toBe(1);
       expect(db_entry.distance).toBe(154);
       expect(db_entry.trip_type).toBe('bike');
+
+      // Check points:
+      const points = await getPointsByTrip(trip_id);
+      expect(points.length).toBe(STANDARD_TRIP.length);
+      points.sort((a, b) => a.time.getTime() - b.time.getTime());
+      expect(points[0]?.speed).toBeCloseTo(0.0);
+      expect(points[1]?.speed).toBeCloseTo(94 / 15);
+      expect(points[2]?.speed).toBeCloseTo(59.61 / 15);
     });
 
     test('should fail on nonexistent user_id', async () => {

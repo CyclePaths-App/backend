@@ -36,11 +36,11 @@ export async function getPointsByTrip(trip_id: number): Promise<Point[]> {
       .orderBy('time', 'asc');
 
     const points: Point[] = rows.map((row) => ({
-      trip_id: row.trip_id,
-      longitude: row.longitude,
-      latitude: row.latitude,
+      trip_id: Number(row.trip_id),
+      longitude: Number(row.longitude),
+      latitude: Number(row.latitude),
       time: row.time,
-      speed: row.speed_mps,
+      speed: Number(row.speed_mps),
     }));
 
     return points ?? [];
