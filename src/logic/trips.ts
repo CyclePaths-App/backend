@@ -28,13 +28,14 @@ export async function createTrip(
   return await DB.transaction(async (trx) => {
     const db_trip = {
       user_id: user_id,
-      distance: distance.toFixed(),
+      distance: distance,
       trip_type: trip_type,
     };
 
-    const res: { id: number }[] = await trx('trips')
+    const id = await trx('trips')
       .insert(db_trip)
       .returning('id')
+      .then((result: { id: number }[]) => result[0]?.id)
       .catch((err) => {
         const err_mes: string = err.message;
         if (err_mes.includes('trips_user_id_foreign'))
@@ -42,11 +43,10 @@ export async function createTrip(
         else throw Error(`createTrip(): Uncaught error: ${err_mes}`);
       });
 
-    if (!res[0]) {
+    if (!id) {
       // Really shouldn't happen, but checking to appease TS.
-      throw Error(`createTrip(): Error creating trip, got ${res.length} IDs.`);
+      throw Error(`createTrip(): Error creating trip. No ID present.`);
     }
-    const id = res[0].id;
 
     // Add each point.
     points.forEach((point) => {
@@ -82,36 +82,50 @@ export async function createTripsInBulk(
   });
 
   return await DB.transaction(async (trx) => {
-    processed_trips.map(async (trip) => {
-      const db_trip = {
-        user_id: uploader_id,
-        distance: trip.distance,
-        trip_type: trip.trip_type,
-      };
+    await Promise.all(
+      processed_trips.map(async (trip) => {
+        const db_trip = {
+          user_id: uploader_id,
+          distance: trip.distance,
+          trip_type: trip.trip_type,
+        };
 
-      const trip_id: number = await trx
-        .insert(db_trip)
-        .returning('id')
-        .first()
-        .catch((err) => {
-          const err_mes: string = err.message;
-          if (err_mes.includes('trips_user_id_foreign'))
-            throw Error(`createTrip(): User_id ${uploader_id} does not exist.`);
-          else throw Error(`createTrip(): Uncaught error: ${err_mes}`);
-        });
+        await trx
+          .insert(db_trip)
+          .into('trips')
+          .returning('id')
+          .then(async (res) => {
+            const trip_id = res[0]?.id;
 
-      // Add each point.
-      trip.points.forEach((point) => {
-        createPoint(
-          trip_id,
-          point.longitude,
-          point.latitude,
-          point.time,
-          point.speed,
-          trx
-        );
-      });
-    });
+            if (!trip_id) {
+              // Shouldn't happen. Checking to appease TypeScript
+              throw Error('createTripsInBulk(): ID not returned.');
+            }
+
+            // Add each point.
+            await Promise.all(
+              trip.points.map((point) => {
+                createPoint(
+                  trip_id,
+                  point.longitude,
+                  point.latitude,
+                  point.time,
+                  point.speed,
+                  trx
+                );
+              })
+            );
+          })
+          .catch((err) => {
+            const err_mes: string = err.message;
+            if (err_mes.includes('trips_user_id_foreign'))
+              throw Error(
+                `createTrip(): User_id ${uploader_id} does not exist.`
+              );
+            else throw Error(`createTrip(): Uncaught error: ${err_mes}`);
+          });
+      })
+    );
 
     return true;
   }).catch((error) => {
@@ -327,7 +341,7 @@ function preprocessTrip(trip: Location[]): {
     });
   }
 
-  return { points, distance };
+  return { points, distance: Math.round(distance) };
 }
 
 //#endregion

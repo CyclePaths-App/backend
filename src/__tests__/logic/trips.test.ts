@@ -3,12 +3,15 @@ import DB from '../../config/knex';
 import { getPointsByTrip } from '../../logic/points';
 import {
   createTrip,
+  createTripsInBulk,
   deleteTrip,
   deleteTripsByUserId,
   getTrip,
   getTripsByUserId,
   Trip,
+  TripType,
   updateTrip,
+  Location,
 } from '../../logic/trips';
 
 describe('Trips logic tests', () => {
@@ -83,6 +86,68 @@ describe('Trips logic tests', () => {
       expect(async () => {
         await createTrip(1, [], 'bike');
       }).rejects.toThrow();
+    });
+  });
+
+  describe('createTripsInBulk()', () => {
+    test('should create trips', async () => {
+      const uploader_id = 1;
+      const trips: { path: Location[]; trip_type: TripType }[] = [
+        { path: STANDARD_TRIP, trip_type: 'walk' },
+        {
+          path: [
+            {
+              longitude: 12.590932,
+              latitude: 55.674221,
+              time: new Date(2025, 8, 13, 15, 5, 0),
+            },
+            {
+              longitude: 12.594269,
+              latitude: 55.672387,
+              time: new Date(2025, 8, 13, 15, 5, 30),
+            },
+            {
+              longitude: 12.595868,
+              latitude: 55.673378,
+              time: new Date(2025, 10, 13, 15, 6, 0),
+            },
+          ],
+          trip_type: 'bike',
+        },
+      ];
+      const result = await createTripsInBulk(uploader_id, trips);
+
+      expect(result).toBe(true);
+    });
+
+    test('should fail gracefully on nonexistent uploader', async () => {
+      const uploader_id = 404;
+      const trips: { path: Location[]; trip_type: TripType }[] = [
+        { path: STANDARD_TRIP, trip_type: 'walk' },
+        {
+          path: [
+            {
+              longitude: 12.590932,
+              latitude: 55.674221,
+              time: new Date(2025, 8, 13, 15, 5, 0),
+            },
+            {
+              longitude: 12.594269,
+              latitude: 55.672387,
+              time: new Date(2025, 8, 13, 15, 5, 30),
+            },
+            {
+              longitude: 12.595868,
+              latitude: 55.673378,
+              time: new Date(2025, 10, 13, 15, 6, 0),
+            },
+          ],
+          trip_type: 'bike',
+        },
+      ];
+      const result = await createTripsInBulk(uploader_id, trips);
+
+      expect(result).toBe(false);
     });
   });
 
