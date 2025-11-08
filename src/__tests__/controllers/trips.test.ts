@@ -3,7 +3,7 @@ import { seed } from '../../../seeds/seed_name';
 import DB from '../../config/knex';
 import { BAD_REQUEST, NOT_FOUND, OK_STATUS } from '../../constants';
 import request from 'supertest';
-import { getTrip } from '../../logic/trips';
+import { getTrip, getTripsByUserId } from '../../logic/trips';
 
 describe('Trips controllers tests', () => {
   const STANDARD_TRIP = [
@@ -45,7 +45,7 @@ describe('Trips controllers tests', () => {
 
   // #endregion
 
-  describe('POST /trips/', () => {
+  describe(`POST ${URL}`, () => {
     test('should create trip and return new trip id.', async () => {
       const res = await request(app)
         .post(URL)
@@ -80,7 +80,53 @@ describe('Trips controllers tests', () => {
     });
   });
 
-  describe('GET /trips/:id', () => {
+  describe(`POST ${URL}bulk/`, () => {
+    const url = `${URL}bulk`;
+
+    test('should create trips', async () => {
+      const body = {
+        uploaderId: 1,
+        trips: [
+          { path: STANDARD_TRIP, tripType: 'walk' },
+          { path: STANDARD_TRIP, tripType: 'bike' },
+        ],
+      };
+      const res = await request(app).post(url).send(body);
+
+      expect(res.status).toBe(OK_STATUS);
+
+      const check = await getTripsByUserId(body.uploaderId);
+      expect(check.length).toBe(3);
+    });
+
+    test('should return INTERNAL_ERROR on undefined uploaderId', async () => {
+      const body = {
+        uploader_id_incorrect_name: 404,
+        trips: [
+          { path: STANDARD_TRIP, tripType: 'walk' },
+          { path: STANDARD_TRIP, tripType: 'bike' },
+        ],
+      };
+      const res = await request(app).post(url).send(body);
+
+      expect(res.status).toBe(BAD_REQUEST);
+    });
+
+    test('should return BAD_REQUEST on invalid uploaderId', async () => {
+      const body = {
+        uploaderId: 'invalid',
+        trips: [
+          { path: STANDARD_TRIP, tripType: 'walk' },
+          { path: STANDARD_TRIP, tripType: 'bike' },
+        ],
+      };
+      const res = await request(app).post(url).send(body);
+
+      expect(res.status).toBe(BAD_REQUEST);
+    });
+  });
+
+  describe(`GET ${URL}:id`, () => {
     test('should get trip', async () => {
       const res = await request(app).get(URL + '1');
 
@@ -101,7 +147,7 @@ describe('Trips controllers tests', () => {
     });
   });
 
-  describe('GET /trips/userid/:id', () => {
+  describe(`GET ${URL}userid/:id`, () => {
     const BASE_URL = URL + 'userid/';
     test('should get trips', async () => {
       const res = await request(app).get(BASE_URL + '1');
@@ -121,7 +167,7 @@ describe('Trips controllers tests', () => {
     });
   });
 
-  describe('PUT /trips/', () => {
+  describe(`PUT ${URL}`, () => {
     test('Should update trip.', async () => {
       const res = await request(app).put(URL).send({
         id: 1,
@@ -191,7 +237,7 @@ describe('Trips controllers tests', () => {
     });
   });
 
-  describe('DELETE /trips/', () => {
+  describe(`DELETE ${URL}`, () => {
     test('Should delete trip', async () => {
       const res = await request(app).delete(URL).send({ id: 1 });
 

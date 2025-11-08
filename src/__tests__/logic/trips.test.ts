@@ -118,6 +118,9 @@ describe('Trips logic tests', () => {
       const result = await createTripsInBulk(uploader_id, trips);
 
       expect(result).toBe(true);
+
+      const check = await getTripsByUserId(uploader_id);
+      expect(check.length).toBe(3);
     });
 
     test('should fail gracefully on nonexistent uploader', async () => {
