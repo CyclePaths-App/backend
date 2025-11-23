@@ -1,13 +1,17 @@
 import { seed } from '../../../seeds/seed_name';
 import DB from '../../config/knex';
+import { getPointsByTrip } from '../../logic/points';
 import {
   createTrip,
+  createTripsInBulk,
   deleteTrip,
   deleteTripsByUserId,
   getTrip,
   getTripsByUserId,
   Trip,
+  TripType,
   updateTrip,
+  Location,
 } from '../../logic/trips';
 
 describe('Trips logic tests', () => {
@@ -58,9 +62,18 @@ describe('Trips logic tests', () => {
         await DB.select('*').from('trips').where({ id: 3 })
       )[0];
 
+      // Check trips:
       expect(db_entry.user_id).toBe(1);
       expect(db_entry.distance).toBe(154);
       expect(db_entry.trip_type).toBe('bike');
+
+      // Check points:
+      const points = await getPointsByTrip(trip_id);
+      expect(points.length).toBe(STANDARD_TRIP.length);
+      points.sort((a, b) => a.time.getTime() - b.time.getTime());
+      expect(points[0]?.speed).toBeCloseTo(0.0);
+      expect(points[1]?.speed).toBeCloseTo(94 / 15);
+      expect(points[2]?.speed).toBeCloseTo(59.61 / 15);
     });
 
     test('should fail on nonexistent user_id', async () => {
@@ -73,6 +86,71 @@ describe('Trips logic tests', () => {
       expect(async () => {
         await createTrip(1, [], 'bike');
       }).rejects.toThrow();
+    });
+  });
+
+  describe('createTripsInBulk()', () => {
+    test('should create trips', async () => {
+      const uploader_id = 1;
+      const trips: { path: Location[]; trip_type: TripType }[] = [
+        { path: STANDARD_TRIP, trip_type: 'walk' },
+        {
+          path: [
+            {
+              longitude: 12.590932,
+              latitude: 55.674221,
+              time: new Date(2025, 8, 13, 15, 5, 0),
+            },
+            {
+              longitude: 12.594269,
+              latitude: 55.672387,
+              time: new Date(2025, 8, 13, 15, 5, 30),
+            },
+            {
+              longitude: 12.595868,
+              latitude: 55.673378,
+              time: new Date(2025, 10, 13, 15, 6, 0),
+            },
+          ],
+          trip_type: 'bike',
+        },
+      ];
+      const result = await createTripsInBulk(uploader_id, trips);
+
+      expect(result).toBe(true);
+
+      const check = await getTripsByUserId(uploader_id);
+      expect(check.length).toBe(3);
+    });
+
+    test('should fail gracefully on nonexistent uploader', async () => {
+      const uploader_id = 404;
+      const trips: { path: Location[]; trip_type: TripType }[] = [
+        { path: STANDARD_TRIP, trip_type: 'walk' },
+        {
+          path: [
+            {
+              longitude: 12.590932,
+              latitude: 55.674221,
+              time: new Date(2025, 8, 13, 15, 5, 0),
+            },
+            {
+              longitude: 12.594269,
+              latitude: 55.672387,
+              time: new Date(2025, 8, 13, 15, 5, 30),
+            },
+            {
+              longitude: 12.595868,
+              latitude: 55.673378,
+              time: new Date(2025, 10, 13, 15, 6, 0),
+            },
+          ],
+          trip_type: 'bike',
+        },
+      ];
+      const result = await createTripsInBulk(uploader_id, trips);
+
+      expect(result).toBe(false);
     });
   });
 

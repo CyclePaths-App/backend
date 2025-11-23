@@ -28,24 +28,25 @@ export async function createTrip(
   return await DB.transaction(async (trx) => {
     const db_trip = {
       user_id: user_id,
-      distance: distance.toFixed(),
+      distance: distance,
       trip_type: trip_type,
     };
 
-    const res: { id: number }[] = await trx('trips')
+    const id = await trx('trips')
       .insert(db_trip)
       .returning('id')
+      .then((result: { id: number }[]) => result[0]?.id)
       .catch((err) => {
         const err_mes: string = err.message;
         if (err_mes.includes('trips_user_id_foreign'))
           throw Error(`createTrip(): User_id ${user_id} does not exist.`);
         else throw Error(`createTrip(): Uncaught error: ${err_mes}`);
       });
-    if (!res[0]) {
+
+    if (!id) {
       // Really shouldn't happen, but checking to appease TS.
-      throw Error(`createTrip(): Error creating trip, got ${res.length} IDs.`);
+      throw Error(`createTrip(): Error creating trip. No ID present.`);
     }
-    const id = res[0].id;
 
     // Add each point.
     points.forEach((point) => {
@@ -63,6 +64,73 @@ export async function createTrip(
   }).catch((err) => {
     console.error(`createTrip(): ${err}`);
     throw err;
+  });
+}
+
+export async function createTripsInBulk(
+  uploader_id: number,
+  trips: { path: Location[]; trip_type: TripType }[]
+): Promise<boolean> {
+  if (trips.length < 1) {
+    return false;
+  }
+
+  const processed_trips = trips.map((trip) => {
+    const { points, distance } = preprocessTrip(trip.path);
+    const trip_type = trip.trip_type;
+    return { points, distance, trip_type };
+  });
+
+  return await DB.transaction(async (trx) => {
+    await Promise.all(
+      processed_trips.map(async (trip) => {
+        const db_trip = {
+          user_id: uploader_id,
+          distance: trip.distance,
+          trip_type: trip.trip_type,
+        };
+
+        await trx
+          .insert(db_trip)
+          .into('trips')
+          .returning('id')
+          .then(async (res) => {
+            const trip_id = res[0]?.id;
+
+            if (!trip_id) {
+              // Shouldn't happen. Checking to appease TypeScript
+              throw Error('createTripsInBulk(): ID not returned.');
+            }
+
+            // Add each point.
+            await Promise.all(
+              trip.points.map((point) => {
+                createPoint(
+                  trip_id,
+                  point.longitude,
+                  point.latitude,
+                  point.time,
+                  point.speed,
+                  trx
+                );
+              })
+            );
+          })
+          .catch((err) => {
+            const err_mes: string = err.message;
+            if (err_mes.includes('trips_user_id_foreign'))
+              throw Error(
+                `createTrip(): User_id ${uploader_id} does not exist.`
+              );
+            else throw Error(`createTrip(): Uncaught error: ${err_mes}`);
+          });
+      })
+    );
+
+    return true;
+  }).catch((error) => {
+    console.error(error);
+    return false;
   });
 }
 
@@ -88,9 +156,9 @@ export async function getTrip(trip_id: number): Promise<Trip | undefined> {
     }
 
     const trip: Trip = {
-      id: row.id,
-      user_id: row.user_id,
-      distance: row.distance,
+      id: Number(row.id),
+      user_id: Number(row.user_id),
+      distance: Number(row.distance),
       trip_type: row.trip_type,
     };
 
@@ -260,7 +328,7 @@ function preprocessTrip(trip: Location[]): {
     // Calculate distance and speed
     const point_distance = turf.length(line, { units: 'meters' });
     const time_difference =
-      (previous_point.time.getTime() - current_point.time.getTime()) * 1000; // Time in seconds.
+      (current_point.time.getTime() - previous_point.time.getTime()) / 1000; // Time in seconds.
     distance += point_distance;
     const speed = time_difference == 0 ? 0 : point_distance / time_difference; // If the time difference is 0, set speed to 0 instead of infinity.
 
@@ -273,7 +341,7 @@ function preprocessTrip(trip: Location[]): {
     });
   }
 
-  return { points, distance };
+  return { points, distance: Math.round(distance) };
 }
 
 //#endregion

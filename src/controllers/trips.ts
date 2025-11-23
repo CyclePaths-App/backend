@@ -1,11 +1,13 @@
 import { Request, Response } from 'express';
 import {
   createTrip,
+  createTripsInBulk,
   deleteTrip,
   getTrip,
   getTripsByUserId,
   isTripType,
   Location,
+  TripType,
   updateTrip,
 } from '../logic/trips';
 import {
@@ -15,6 +17,22 @@ import {
   OK_STATUS,
 } from '../constants';
 
+/**
+ * Uses the passed request body to create a Trips object.
+ *
+ * @param req Request sent from frontend.
+ * @param res Result sent back to frontend.
+ *
+ * @returns:
+ * - OK_STATUS:
+ *   - Successful creation of a trip.
+ * - BAD_REQUEST:
+ *   - Nonexistent or invalid user_id
+ *   - Nonexistent or invalid trip array
+ *   - Nonexistent or invalid trip_type
+ * - INTERNAL_ERROR:
+ *   - Error or unsuccessful creation of trip.
+ */
 export async function postTrip(req: Request, res: Response): Promise<void> {
   //console.log(req.body);
   const { user_id, trip, trip_type } = req.body;
@@ -63,6 +81,102 @@ export async function postTrip(req: Request, res: Response): Promise<void> {
   } catch (err) {
     console.error(err);
     res.status(INTERNAL_ERROR).send({ message: err });
+  }
+}
+
+export async function postTripsInBulk(req: Request, res: Response) {
+  const { uploaderId, trips } = req.body;
+
+  if (!uploaderId) {
+    res.status(BAD_REQUEST).send({
+      message: 'The "uploaderId" item in the request body must be present.',
+    });
+  }
+  if (isNaN(uploaderId)) {
+    res.status(BAD_REQUEST).send({
+      message: `The "uploaderId" field must be a number. Received: \"${uploaderId}\"`,
+    });
+  }
+
+  if (!trips) {
+    res.status(BAD_REQUEST).send({
+      message: 'The "trips" item in the request body must be present.',
+    });
+  }
+  if (!Array.isArray(trips)) {
+    res.status(BAD_REQUEST).send({
+      message: `The "trips" item must be an array of the format: 
+{ path: {
+    latitude: number;
+    longitude: number;
+    time: Date;
+  }[],
+  tripType: "walk" | "bike" 
+}. 
+
+Received: \"${trips}\"`,
+    });
+  }
+  const checkedTrips: { path: Location[]; trip_type: TripType }[] = trips.map(
+    (trip: any) => {
+      if (!trip.path || !Array.isArray(trip.path) || !trip.tripType) {
+        console.error('Invalid trips format.');
+        res.status(BAD_REQUEST).send({
+          message: `The "trips" item must be an array of the format: 
+{ path: {
+    latitude: number;
+    longitude: number;
+    time: Date;
+  }[],
+  tripType: "walk" | "bike" 
+}. 
+
+Received: \"${trips}\"`,
+        });
+      }
+
+      const path: Location[] = trip.path.map((location: any) => {
+        if (!location.latitude || !location.longitude || !location.time) {
+          console.error('Invalid trips format.');
+          res.status(BAD_REQUEST).send({
+            message: `The "trips" item must be an array of the format: 
+{ path: {
+    latitude: number;
+    longitude: number;
+    time: Date;
+  }[],
+  tripType: "walk" | "bike" 
+}. 
+
+Received: \"${trips}\"`,
+          });
+        }
+        return {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          time: new Date(location.time),
+        };
+      });
+
+      return { path, trip_type: trip.tripType };
+    }
+  );
+
+  try {
+    const result = await createTripsInBulk(uploaderId, checkedTrips);
+
+    if (result) {
+      res.status(OK_STATUS).send();
+    } else {
+      res
+        .status(INTERNAL_ERROR)
+        .send({ message: 'Unable to create trips due to an Internal Error.' });
+    }
+  } catch (err) {
+    console.error(err);
+    res
+      .status(INTERNAL_ERROR)
+      .send({ message: 'Unable to create trips due to an Internal Error.' });
   }
 }
 

@@ -1,6 +1,21 @@
-./src/__tests__
-./scripts
-./.gitignore
-./prettierrc
-./LICENSE
-./README.md
+# Unnecessary code
+src/__tests__
+scripts
+seeds
+
+# Output files
+dist
+coverage
+node_modules
+
+# Config files
+docker-compose.yaml
+.git
+.gitignore
+prettierrc
+Dockerfile
+
+# READMEs
+LICENSE
+README.md
+CONTRIBUTING.md
