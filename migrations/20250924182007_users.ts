@@ -4,6 +4,8 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTableIfNotExists('users', (table) => {
     table.increments('id').primary();
     table.string('username').notNullable().unique();
+    table.string('first_name');
+    table.string('last_name');
     table.string('email').notNullable();
     table.string('password').notNullable();
   });

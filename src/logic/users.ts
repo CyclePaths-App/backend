@@ -9,6 +9,8 @@ import DB from '../config/knex';
  */
 export async function CreateUser(
   username: string,
+  first_name: string,
+  last_name: string,
   email: string,
   password: string
 ): Promise<number> {
@@ -16,6 +18,8 @@ export async function CreateUser(
     // Create an object that holds the userID, username, email, password.
     const dbUser = {
       username: username,
+      first_name: first_name,
+      last_name: last_name,
       email: email,
       password: password,
     };
@@ -57,6 +61,8 @@ export async function GetUserByID(userID: number) {
     const user: User = {
       id: row.userID,
       username: row.username,
+      first_name: row.first_name,
+      last_name: row.last_name,
       email: row.email,
       password: row.passwords,
     };
@@ -84,8 +90,10 @@ export async function GetUserByName(username: string) {
     }
 
     const user: User = {
-      id: row.id,
+      id: row.userID,
       username: row.username,
+      first_name: row.first_name,
+      last_name: row.last_name,
       email: row.email,
       password: row.passwords,
     };
@@ -131,6 +139,8 @@ export async function DeleteUserByName(username: string) {
 export type User = {
   id: number;
   username: string;
+  first_name: string;
+  last_name: string;
   email: string;
   password: string;
 };

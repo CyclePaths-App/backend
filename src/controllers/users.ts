@@ -18,7 +18,7 @@ import {
  * Create a new user.
  */
 export async function postUser(req: Request, res: Response): Promise<void> {
-  const { username, email, password } = req.body;
+  const { username, first_name, last_name, email, password } = req.body;
 
     // Input validation
     if (!username || typeof username !== 'string') {
@@ -40,7 +40,7 @@ export async function postUser(req: Request, res: Response): Promise<void> {
     }
 
     try {
-        const id = await CreateUser(username, email, password);
+        const id = await CreateUser(username, first_name, last_name, email, password);
         res.status(OK_STATUS).send({ id });
     } catch (err) {
         console.error(err);
