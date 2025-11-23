@@ -101,7 +101,7 @@ describe('Trips controllers tests', () => {
     });
   });
 
-  describe('GET /trips/userid/', () => {
+  describe('GET /trips/userid/:id', () => {
     const BASE_URL = URL + 'userid/';
     test('should get trips', async () => {
       const res = await request(app).get(BASE_URL + '1');

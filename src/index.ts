@@ -3,6 +3,7 @@ import cors from 'cors';
 import { BACKEND_PORT } from './constants';
 import tripsRouter from './routers/trips';
 import usersRouter from './routers/users';
+import pointsRouter from './routers/points';
 
 export const app = express();
 
@@ -15,6 +16,7 @@ app.get('/', (_req, res) => {
 
 app.use('/trips', tripsRouter);
 app.use('/users', usersRouter);
+app.use('/points', pointsRouter);
 
 app.listen(BACKEND_PORT, () => {
   console.log(`Server running at http://localhost:${BACKEND_PORT}`);

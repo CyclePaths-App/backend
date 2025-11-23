@@ -31,9 +31,11 @@ describe('Users controllers tests', () => {
    */
   describe('POST /users', () => {
     test('should create user and return new user id', async () => {
-      const res = await request(app)
-        .post(URL)
-        .send({ username: 'Alice', email: 'alice@test.com', password: 'pass123' });
+      const res = await request(app).post(URL).send({
+        username: 'Alice',
+        email: 'alice@test.com',
+        password: 'pass123',
+      });
 
       expect(res.status).toBe(OK_STATUS);
       expect(res.body.id).toBeDefined();
@@ -93,10 +95,10 @@ describe('Users controllers tests', () => {
    */
   describe('GET /users/username/:username', () => {
     test('should fetch user by username', async () => {
-      const res = await request(app).get(URL + 'username/User1');
+      const res = await request(app).get(URL + 'username/Testy McTestFace');
 
       expect(res.status).toBe(OK_STATUS);
-      expect(res.body.username).toBe('User1');
+      expect(res.body.username).toBe('Testy McTestFace');
       expect(res.body.id).toBeDefined();
     });
 
@@ -140,7 +142,7 @@ describe('Users controllers tests', () => {
    */
   describe('DELETE /users/username/:username', () => {
     test('should delete user by username', async () => {
-      const res = await request(app).delete(URL + 'username/User1');
+      const res = await request(app).delete(URL + 'username/Testy McTestFace');
 
       expect(res.status).toBe(OK_STATUS);
 
