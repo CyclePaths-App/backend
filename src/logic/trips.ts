@@ -18,7 +18,7 @@ export async function createTrip(
   trip_type: TripType
 ): Promise<number> {
   // Check that there are enough points for a trip.
-  if (trip.length < 2) {
+  if (trip.length < 1) {
     throw Error('createTrip(): Trip must have points');
   }
 
