@@ -1,17 +1,22 @@
 import type { Knex } from 'knex';
 import dotenv from 'dotenv';
 
-// Get env variables
+// Load env variables
 dotenv.config();
-const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE } = process.env;
-export const CONNECTION_STRING = `postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}`;
 
-const MIGRATION_TABLE_NAME = 'knex_migrations'; // Be lazy
+// Use DATABASE_URL from .env
+const { DATABASE_URL } = process.env;
+
+if (!DATABASE_URL) {
+  throw new Error('DATABASE_URL is not set in .env');
+}
+
+const MIGRATION_TABLE_NAME = 'knex_migrations';
 
 const config: { [key: string]: Knex.Config } = {
   development: {
     client: 'postgresql',
-    connection: CONNECTION_STRING,
+    connection: DATABASE_URL,
     debug: true,
     pool: {
       min: 2,
@@ -23,7 +28,7 @@ const config: { [key: string]: Knex.Config } = {
   },
   staging: {
     client: 'postgresql',
-    connection: CONNECTION_STRING,
+    connection: DATABASE_URL,
     debug: true,
     pool: {
       min: 2,
@@ -35,7 +40,7 @@ const config: { [key: string]: Knex.Config } = {
   },
   production: {
     client: 'postgresql',
-    connection: CONNECTION_STRING,
+    connection: DATABASE_URL,
     pool: {
       min: 2,
       max: 10,
@@ -47,3 +52,4 @@ const config: { [key: string]: Knex.Config } = {
 };
 
 export default config;
+
