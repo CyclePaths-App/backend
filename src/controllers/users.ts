@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import {
   CreateUser,
   GetUserByID,
-  GetUserByName,
+  GetUserByNameAndPassword,
   DeleteUserByID,
   DeleteUserByName,
   User,
@@ -26,6 +26,18 @@ export async function postUser(req: Request, res: Response): Promise<void> {
         message: `postUser(): username must be a string. Received: ${username}`,
         });
     }
+
+    if (!first_name || typeof first_name !== 'string') {
+        res.status(BAD_REQUEST).send({
+        message: `postUser(): first name must be a string. Received: ${first_name}`,
+        });
+    }
+
+    if (!last_name || typeof last_name !== 'string') {
+        res.status(BAD_REQUEST).send({
+        message: `postUser(): last name must be a string. Received: ${last_name}`,
+        });
+    }
     
     if (!email || typeof email !== 'string') {
         res.status(BAD_REQUEST).send({
@@ -41,11 +53,40 @@ export async function postUser(req: Request, res: Response): Promise<void> {
 
     try {
         const id = await CreateUser(username, first_name, last_name, email, password);
-        res.status(OK_STATUS).send({ id });
+        const user: User = { id, username, first_name, last_name, email, password };
+        res.status(OK_STATUS).send(user);
     } catch (err) {
         console.error(err);
         res.status(INTERNAL_ERROR).send({ message: `postUser(): ${err}` });
     }
+}
+
+/**
+ * Login user.
+ */
+export async function postLoginUser(req: Request, res: Response): Promise<void> {
+  const { username, password } = req.body;
+
+  if (!username || typeof username !== 'string') {
+    res.status(BAD_REQUEST).send({ message: "Username must be a string" });
+  }
+
+  if (!password || typeof password !== 'string') {
+    res.status(BAD_REQUEST).send({ message: "Password must be a string" });
+  }
+
+  try {
+    const user = await GetUserByNameAndPassword(username, password);
+
+    if (!user) {
+      res.status(NOT_FOUND).send({ message: "Invalid username or password" });
+    }
+
+    res.status(OK_STATUS).send(user);
+  } catch (err) {
+    console.error(err);
+    res.status(INTERNAL_ERROR).send({ message: `postLoginUser(): ${err}` });
+  }
 }
 
 /**
@@ -76,32 +117,32 @@ export async function fetchUserByID(req: Request, res: Response) {
   }
 }
 
-/**
+/** MIGHT NOT NEED THIS
  * GET /users/username/:username
  * Fetch a user by username.
  */
-export async function fetchUserByName(req: Request, res: Response) {
-  const { username } = req.params;
+// export async function fetchUserByName(req: Request, res: Response) {
+//   const { username } = req.params;
 
-  if (!username || typeof username !== 'string') {
-    res
-      .status(BAD_REQUEST)
-      .send(`fetchUserByName(): username must be a string. Received: ${username}`);
-  }
+//   if (!username || typeof username !== 'string') {
+//     res
+//       .status(BAD_REQUEST)
+//       .send(`fetchUserByName(): username must be a string. Received: ${username}`);
+//   }
 
-  try {
-    const user: User | undefined = await GetUserByName(username as string);
+//   try {
+//     const user: User | undefined = await GetUserByName(username as string);
 
-    if (!user) {
-      res.status(NOT_FOUND).send(`fetchUserByName(): User not found.`);
-    }
+//     if (!user) {
+//       res.status(NOT_FOUND).send(`fetchUserByName(): User not found.`);
+//     }
 
-    res.status(OK_STATUS).send(user);
-  } catch (err) {
-    console.error(err);
-    res.status(INTERNAL_ERROR).send(`fetchUserByName(): ${err}`);
-  }
-}
+//     res.status(OK_STATUS).send(user);
+//   } catch (err) {
+//     console.error(err);
+//     res.status(INTERNAL_ERROR).send(`fetchUserByName(): ${err}`);
+//   }
+// }
 
 /**
  * Delete a user by ID.

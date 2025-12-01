@@ -3,7 +3,7 @@ import { seed } from '../../../seeds/seed_name';
 import DB from '../../config/knex';
 import { BAD_REQUEST, NOT_FOUND, OK_STATUS } from '../../constants';
 import request from 'supertest';
-import { GetUserByID, GetUserByName } from '../../logic/users';
+import { GetUserByID, GetUserByNameAndPassword, GetUserByName } from '../../logic/users';
 
 describe('Users controllers tests', () => {
   const URL = '/users/';
@@ -146,6 +146,7 @@ describe('Users controllers tests', () => {
 
       expect(res.status).toBe(OK_STATUS);
 
+      //I'll fix this, I changed the method parameters that's why it's bugging out
       const check = await GetUserByName('User1');
       expect(check).toBeUndefined();
     });

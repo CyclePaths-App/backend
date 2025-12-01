@@ -2,27 +2,28 @@ import express from 'express';
 import {
   postUser,
   fetchUserByID,
-  fetchUserByName,
   delUserByID,
   delUserByName,
+  postLoginUser,
 } from '../controllers/users';
 
-const BASE_URL = '/';
 const router = express.Router();
 
 // Create a new user
-router.post(BASE_URL, postUser);
+router.post('/', postUser);
+// Send user login and retrieve user information.
+router.post('/login', postLoginUser);
 
-// Fetch a user by ID
-router.get(BASE_URL + ':id', fetchUserByID);
+// Fetch user by ID
+router.get('/:id', fetchUserByID);
 
-// Fetch a user by username
-router.get(BASE_URL + 'username/:username', fetchUserByName);
+// Fetch user by username
+// router.get('/username/:username', fetchUserByNameAndPassword);
 
-// Delete a user by ID
-router.delete(BASE_URL + ':id', delUserByID);
+// Delete user by ID
+router.delete('/:id', delUserByID);
 
-// Delete a user by username
-router.delete(BASE_URL + 'username/:username', delUserByName);
+// Delete user by username
+router.delete('/username/:username', delUserByName);
 
 export default router;
