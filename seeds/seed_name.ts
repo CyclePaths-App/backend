@@ -11,11 +11,15 @@ export async function seed(knex: Knex): Promise<void> {
   await knex('users').insert([
     {
       username: 'Testy McTestFace',
+      first_name: 'Testy',
+      last_name: 'McTestFace',
       email: 'tmctestface@yahoo.com',
       password: 'securePassword123',
     },
     {
       username: 'Tester Testerson',
+      first_name: 'Tester',
+      last_name: 'Testerson',
       email: 'testertesterson@gmail.com',
       password: 'insecure',
     },

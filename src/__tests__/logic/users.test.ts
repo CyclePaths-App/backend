@@ -13,6 +13,8 @@ import {
 const testUser: User = {
   id: 3, // comment so it would let me commit
   username: `testuser`,
+  first_name: 'test',
+  last_name: 'user',
   email: `test@example.com`,
   password: 'secret123',
 };
@@ -38,6 +40,8 @@ describe('User Logic Tests', () => {
   test('should create a new user successfully', async () => {
     const id = await CreateUser(
       testUser.username,
+      testUser.first_name,
+      testUser.last_name,
       testUser.email,
       testUser.password
     );
@@ -74,7 +78,13 @@ describe('User Logic Tests', () => {
     // Create a temp user to delete
     const tempRand = Math.floor(Math.random() * 10000);
     const tempName = `tempuser_${tempRand}`;
-    await CreateUser(tempName, `temp_${tempRand}@example.com`, 'temp');
+    await CreateUser(
+      tempName,
+      'first',
+      'last',
+      `temp_${tempRand}@example.com`,
+      'temp'
+    );
     const result = await DeleteUserByName(tempName as any); // code uses number type for username
     expect(result).toBeGreaterThanOrEqual(1);
   });
