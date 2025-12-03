@@ -33,6 +33,7 @@ export const JWT_ACCESS_SECRET =
 export const JWT_REFRESH_SECRET =
   process.env.JWT_ACCESS_SECRET ?? 'dev-refresh-secret';
 
-export const ACCESS_TTL = process.env.ACCESS_TTL || '15m';
-export const REFRESH_TTL = process.env.REFRESH_TTL || '14d';
+export const ACCESS_TTL: number = Number(process.env.ACCESS_TTL) || 60 * 15;
+export const REFRESH_TTL: number =
+  Number(process.env.REFRESH_TTL) || 60 * 60 * 24 * 14;
 export const API_KEYS = process.env.API_KEYS;

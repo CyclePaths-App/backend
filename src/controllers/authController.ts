@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import argon2 from 'argon2';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import DB from '../config/knex';
 import {
   ACCESS_TTL,
@@ -12,9 +12,12 @@ import {
 } from '../constants';
 
 // Use JWT secret + TTL from env (with defaults for dev)
-const ACCESS_SECRET = JWT_ACCESS_SECRET;
-function signAccess(userId: number) {
-  return jwt.sign({ uid: userId }, ACCESS_SECRET, { expiresIn: ACCESS_TTL });
+const ACCESS_SECRET: string = JWT_ACCESS_SECRET;
+function signAccess(userId: number): string {
+  const options: SignOptions = {
+    expiresIn: ACCESS_TTL,
+  };
+  return jwt.sign({ uid: userId }, ACCESS_SECRET, options);
 }
 
 // POST /auth/register
