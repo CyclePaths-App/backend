@@ -81,7 +81,7 @@ export async function seed(knex: Knex): Promise<void> {
       trip_id: 2,
       longitude: 12.595868,
       latitude: 55.673378,
-      time: new Date(2025, 10, 13, 15, 6, 0),
+      time: new Date(2025, 8, 13, 15, 6, 0),
       speed_mps: 0,
     },
   ]);
