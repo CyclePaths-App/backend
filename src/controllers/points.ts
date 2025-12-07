@@ -3,16 +3,20 @@ import {
   createPoint,
   deletePoint,
   getPoint,
+  getPoints,
   getPointsByTrip,
   updatePoint,
+  WindowOptions,
 } from '../logic/points';
 import DB from '../config/knex';
 import {
   BAD_REQUEST,
+  FORBIDDEN,
   INTERNAL_ERROR,
   NOT_FOUND,
   OK_STATUS,
 } from '../constants';
+import { isTripType, TripType } from '../logic/trips';
 
 /**
  * POST /api/points
@@ -60,7 +64,14 @@ export async function postPoint(req: Request, res: Response): Promise<void> {
   }
 
   try {
-    await createPoint(trip_id, longitude, latitude, new Date(time), speed, undefined);
+    await createPoint(
+      trip_id,
+      longitude,
+      latitude,
+      new Date(time),
+      speed,
+      undefined
+    );
     res.status(OK_STATUS).send({ message: 'Point created successfully.' });
   } catch (err) {
     console.error(err);
@@ -78,7 +89,9 @@ export async function fetchPointsByTrip(req: Request, res: Response) {
   if (!trip_id || isNaN(+trip_id)) {
     res
       .status(BAD_REQUEST)
-      .send(`getPointsByTrip(): trip_id must be a number. Received: ${trip_id}`);
+      .send(
+        `getPointsByTrip(): trip_id must be a number. Received: ${trip_id}`
+      );
     return;
   }
 
@@ -87,7 +100,9 @@ export async function fetchPointsByTrip(req: Request, res: Response) {
     res.status(OK_STATUS).send(points);
   } catch (error) {
     console.error(error);
-    res.status(INTERNAL_ERROR).send('fetchPointsByTrip(): Failed to get points.');
+    res
+      .status(INTERNAL_ERROR)
+      .send('fetchPointsByTrip(): Failed to get points.');
   }
 }
 
@@ -125,6 +140,83 @@ export async function fetchPoint(req: Request, res: Response) {
 }
 
 /**
+ * GET /points/:north/:south/:east/:west?type?justDestination
+ * Get points in a specified location, optionally applying modifiers.
+ */
+export async function fetchPoints(req: Request, res: Response) {
+  const { north, south, east, west } = req.params;
+  const { type, justDestinations } = req.query;
+
+  // Check the latitudes and longitudes.
+  if (!north || isNaN(+north)) {
+    res
+      .status(BAD_REQUEST)
+      .send(`getPoints(): 'north' must be a number. Received: ${north}`);
+    return;
+  }
+  if (!south || isNaN(+south)) {
+    res
+      .status(BAD_REQUEST)
+      .send(`getPoints(): 'south' must be a number. Received: ${south}`);
+    return;
+  }
+  if (!east || isNaN(+east)) {
+    res
+      .status(BAD_REQUEST)
+      .send(`getPoints(): 'east' must be a number. Received: ${east}`);
+    return;
+  }
+  if (!west || isNaN(+west)) {
+    res
+      .status(BAD_REQUEST)
+      .send(`getPoints(): 'west' must be a number. Received: ${west}`);
+    return;
+  }
+
+  // Check the optional modifiers.
+  if (type && !isTripType(type)) {
+    res
+      .status(BAD_REQUEST)
+      .send(`getPoints(): 'type' must be a valid trip type. Received: ${type}`);
+    return;
+  }
+  if (
+    justDestinations &&
+    justDestinations != 'false' &&
+    justDestinations != 'true'
+  ) {
+    res
+      .status(BAD_REQUEST)
+      .send(
+        `getPoints(): 'justDestinations' must be a boolean. Received: ${justDestinations}`
+      );
+    return;
+  }
+
+  const options: WindowOptions = {
+    type: type as TripType | undefined, // We already checked above, but TS doesn't believe us.
+    justDestinations: justDestinations as boolean | undefined,
+  };
+
+  getPoints(+north, +south, +east, +west, options)
+    .then((points) => {
+      if (points !== null) {
+        res.status(OK_STATUS).send(points);
+      } else {
+        res
+          .status(FORBIDDEN)
+          .send(`Not enough users in this area to be deidentifiable.`);
+      }
+      return;
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(INTERNAL_ERROR).send(`fetchPoints(): Unknown Error: ${error}`);
+      return;
+    });
+}
+
+/**
  * PUT /api/points/:trip_id/:time
  * Update a point (speed or coordinates).
  */
@@ -151,7 +243,8 @@ export async function putPoint(req: Request, res: Response) {
       speed,
     });
 
-    if (result) res.status(OK_STATUS).send({ message: 'Point updated successfully.' });
+    if (result)
+      res.status(OK_STATUS).send({ message: 'Point updated successfully.' });
     else res.status(NOT_FOUND).send('updatePoint(): Point not found.');
   } catch (error) {
     console.error(error);
@@ -203,7 +296,9 @@ export async function fetchPointsByLocation(req: Request, res: Response) {
   ) {
     res
       .status(BAD_REQUEST)
-      .send('getPointsByLocation(): must provide minLat, maxLat, minLon, maxLon.');
+      .send(
+        'getPointsByLocation(): must provide minLat, maxLat, minLon, maxLon.'
+      );
     return;
   }
 

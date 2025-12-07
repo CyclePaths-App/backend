@@ -6,6 +6,7 @@ import {
   putPoint,
   delPoint,
   fetchPointsByLocation,
+  fetchPoints,
 } from '../controllers/points';
 
 const BASE_URL = '/';
@@ -16,6 +17,8 @@ router.post(BASE_URL, postPoint);
 router.get(BASE_URL + 'trip/:trip_id', fetchPointsByTrip);
 
 router.get(BASE_URL + ':trip_id/:time', fetchPoint);
+
+router.get(BASE_URL + ':north/:south/:east/:west', fetchPoints);
 
 router.put(BASE_URL + ':trip_id/:time', putPoint);
 

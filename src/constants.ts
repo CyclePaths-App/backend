@@ -12,6 +12,9 @@ export const CONFLICT = 409;
 export const INTERNAL_ERROR = 500;
 export const NOT_IMPLEMENTED = 501;
 
+export const DEIDENTIFIABLE_MIN = 100;
+
+// Networking configuration
 export const BACKEND_PORT = Number(process.env.PORT) || 8000;
 
 // DB Connection
