@@ -120,3 +120,56 @@ export async function deletePoint(
     throw Error(`deletePoint(): ${err.message}`);
   }
 }
+
+export async function getAllPoints(): Promise<{ latitude: number; longitude: number }[]> {
+  try {
+    const rows = await DB.select("latitude", "longitude").from("points");
+
+    return rows.map(row => ({
+      latitude: row.latitude,
+      longitude: row.longitude
+    }));
+  } catch (err: any) {
+    console.error(err);
+    throw Error(`getAllPoints(): ${err.message}`);
+  }
+}
+export async function getWalkingPoints() {
+  try {
+    const rows = await DB("points")
+      .join("trips", "points.trip_id", "trips.id")
+      .select("points.latitude", "points.longitude")
+      .where("trips.trip_type", "walk");
+
+    return rows;
+  } catch (err: any) {
+    throw Error(`getWalkingPoints(): ${err.message}`);
+  }
+}
+export async function getCyclingPoints() {
+  try {
+    const rows = await DB("points")
+      .join("trips", "points.trip_id", "trips.id")
+      .select("points.latitude", "points.longitude")
+      .where("trips.trip_type", "bike");
+
+    return rows;
+  } catch (err: any) {
+    throw Error(`getCyclingPoints(): ${err.message}`);
+  }
+}
+
+export async function getDestinationPoints() {
+  try {
+    const result = await DB.raw(`
+      SELECT DISTINCT ON (trip_id) latitude, longitude
+      FROM points
+      ORDER BY trip_id, time DESC
+    `);
+
+    return result.rows;
+  } catch (err: any) {
+    throw Error(`getDestinationPoints(): ${err.message}`);
+  }
+}
+
