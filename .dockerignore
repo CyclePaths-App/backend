@@ -2,6 +2,7 @@
 src/__tests__
 scripts
 seeds
+migrations
 
 # Output files
 dist
